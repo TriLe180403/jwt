@@ -1,32 +1,33 @@
 package com.example.Security.Security;
 
-import com.example.Security.Service.UserDetailsImpl;
+import com.example.Security.Service.UserDetailsService;
 import io.jsonwebtoken.*;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
-import java.security.SignatureException;
+
 import java.util.Arrays;
 import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.function.Function;
+
 
 @Component
 public class JwtUtils {
-    private static final Logger logger = (Logger) LoggerFactory.getLogger(JwtUtils.class);
+
 
     @Value("${bezkoder.app.jwtSecret}")
     private String jwtSecret;
 
     @Value("${bezkoder.app.jwtExpirationMs}")
     private int jwtExpirationMs;
-
+    private UserDetailsService userDetails;
 
 
     public String generateJwtToken(Authentication authentication) {
-        UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
+        UserDetailsService userPrincipal = (UserDetailsService) authentication.getPrincipal();
         Date dateJwtDate = new Date();
         dateJwtDate.getTime();
 
@@ -44,30 +45,38 @@ public class JwtUtils {
                 .setExpiration(new Date(System.currentTimeMillis() + 5 * 60 * 60 * 1000))
                 .signWith(SignatureAlgorithm.HS256, jwtSecret).compact();
     }
-    public String getEmailFromJwtToken(String token) {
+    //validate token
 
-
+    public Boolean validateToken(String token) {
+        final String username = getUsernameFromToken(token);
+        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
-    public boolean validateJwtToken(String authToken) {
-        try {
-
-            Jwts.parser().setSigningKey(jwtSecret.getBytes()).parseClaimsJws(token);
-            return true;
-        } catch (SignatureException e) {
-            logger.log(Level.parse("Invalid JWT signature: {}"), e.getMessage());
-        } catch (MalformedJwtException e) {
-            logger.log(Level.parse("Invalid JWT token: {}"), e.getMessage());
-        } catch (ExpiredJwtException e) {
-            logger.log(Level.parse("JWT token is expired: {}"), e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            logger.log(Level.parse("JWT token is usnupported: {}"), e.getMessage());
-        } catch (IllegalArgumentException e) {
-            logger.log(Level.parse("JWT claims string is empty: {}"), e.getMessage());
-        }
-
+    private boolean isTokenExpired(String token) {
         return false;
     }
 
 
+    //retrieve username from jwt token
+    public String getUsernameFromToken(String auToken) {
+        return getClaimFromToken(auToken, Claims::getSubject);
+    }
+
+
+    public <T> T getClaimFromToken(String auToken, Function<Claims, T> claimsResolver) {
+        final Claims claims = getAllClaimsFromToken(auToken);
+        return claimsResolver.apply(claims);
+    }
+
+    //for retrieveing any information from token we will need the secret key
+    private Claims getAllClaimsFromToken(String auToken) {
+        return null;
+    }
+
+    public String getEmailFromJwtToken(String jwt) {
+
+        return jwt;
+    }
 }
+
+

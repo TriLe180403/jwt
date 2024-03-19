@@ -8,7 +8,7 @@ import com.example.Security.Repository.AppRoleRepository;
 import com.example.Security.Repository.CartRepository;
 import com.example.Security.Repository.UserRepository;
 import com.example.Security.Security.JwtUtils;
-import com.example.Security.Service.UserDetailsImpl;
+import com.example.Security.Service.UserDetailsService;
 import com.example.Security.entity.AppRole;
 import com.example.Security.entity.Cart;
 import com.example.Security.entity.User;
@@ -22,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -59,7 +60,7 @@ public class UserController {
     @GetMapping("email/{email}")
     public ResponseEntity<List<User>> getOneByEmail(@PathVariable("email") String email){
         if (userRepository.existsByEmail(email)) {
-            return ResponseEntity.ok( userRepository.findByEmail(email));
+            return ResponseEntity.ok(Collections.singletonList(userRepository.findByEmail(email)));
         }
         return ResponseEntity.notFound().build();
     }
@@ -81,6 +82,8 @@ public class UserController {
         Cart c = new Cart(0,0.0,u.getAddress(),u.getPhone());
         cartRepository.save(c);
         return ResponseEntity.ok(u);
+
+
     }
 
     @PutMapping("{id}")
@@ -132,13 +135,13 @@ public class UserController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtils.generateJwtToken(authentication);
 
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        UserDetailsService userDetails = (UserDetailsService) authentication.getPrincipal();
         List<String> roles = userDetails.getAuthorities().stream().map(item -> item.getAuthority()).collect(Collectors.toList());
 
         return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getName(),
                 userDetails.getEmail(), userDetails.getPassword(), userDetails.getPhone(),userDetails.getAddress(),
                 userDetails.getGender(), userDetails.getImage(), roles));
-    }
+         }
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Validated @RequestBody SignupRequest signupRequest){
         if (userRepository.existsByEmail(signupRequest.getEmail())){
@@ -148,6 +151,13 @@ public class UserController {
             return ResponseEntity.badRequest().body(new MessageResponse("error: Email is already in use!"));
         }
     }
+
+    @GetMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        return ResponseEntity.ok().build();
+    }
+
+
 
 
 }

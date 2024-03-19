@@ -19,4 +19,22 @@ public class CartDetail implements Serializable {
     private int quantity;
     private Double price;
 
+
+
+
+
+    public Integer getCartId() {
+
+        return null;
+    }
+
+    public Integer getCart() {
+
+        return null;
+    }
+
+
+    public int getProductId() {
+        return 0;
+    }
 }
